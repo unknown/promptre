@@ -1,13 +1,13 @@
 // literal values that can be rendered
-export type Literal = string | number | null | undefined | boolean;
+export type Literal = string | number | boolean | undefined | null;
 
 export function isLiteral(node: PromptNode): node is Literal {
   return (
-    node === undefined ||
-    node === null ||
-    typeof node === "boolean" ||
+    typeof node === "string" ||
     typeof node === "number" ||
-    typeof node === "string"
+    typeof node === "boolean" ||
+    node === undefined ||
+    node === null
   );
 }
 
