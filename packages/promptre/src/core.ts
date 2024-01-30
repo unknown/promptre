@@ -34,7 +34,7 @@ export function render(node: PromptNode): string {
   }
 
   if (Array.isArray(node)) {
-    const results = node.map((child) => render(child));
+    const results = node.map(render);
     return results.join(" ");
   }
 
