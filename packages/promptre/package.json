@@ -1,0 +1,19 @@
+{
+  "name": "promptre",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules dist",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@promptre/tokenizer": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
