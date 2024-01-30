@@ -63,7 +63,7 @@ function renderRecursive(
   priorityLimit: number,
 ): string | null {
   if (isLiteral(node)) {
-    return node ? node.toString() : "";
+    return node ? node.toString() : null;
   }
 
   if (Array.isArray(node)) {
