@@ -295,7 +295,6 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { sum, encode } = nativeBinding
+const { encode } = nativeBinding
 
-module.exports.sum = sum
 module.exports.encode = encode
