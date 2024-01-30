@@ -28,6 +28,9 @@
     "composite": true,
     "declarationMap": true,
 
+    "jsx": "react",
+    "jsxFactory": "Promptre.createElement",
+
     "rootDir": "src"
   },
   "include": ["./src/**/*.ts", "./src/**/*.tsx"]
