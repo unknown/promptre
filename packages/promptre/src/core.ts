@@ -110,7 +110,7 @@ export function render(node: PromptNode, options: RenderOptions): string {
   // binary search to find max priority level
   let left = 0;
   let right = sortedPriorities.length - 1;
-  let maxPriorityIndex = 0;
+  let maxPriorityIndex: number | null = null;
   while (left <= right) {
     const candidateIndex = left + Math.floor((right - left) / 2);
     const candidatePriority = sortedPriorities[candidateIndex]!;
@@ -118,12 +118,18 @@ export function render(node: PromptNode, options: RenderOptions): string {
     const result = renderRecursive(node, candidatePriority);
     const numTokens = result ? countTokens(result, model) : null;
 
-    if (numTokens !== null && numTokens <= tokenLimit) {
+    if (numTokens === null || numTokens <= tokenLimit) {
       maxPriorityIndex = candidateIndex;
       left = candidateIndex + 1;
     } else {
       right = candidateIndex - 1;
     }
+  }
+
+  if (maxPriorityIndex === null) {
+    throw new Error(
+      `Could not render valid prompt with ${tokenLimit} token limit.`,
+    );
   }
 
   const maxPriority = sortedPriorities[maxPriorityIndex]!;

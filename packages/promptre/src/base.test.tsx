@@ -31,3 +31,9 @@ test("rendering scopes respects token limit", () => {
     expect(tokens).lte(tokenLimit);
   }
 });
+
+test("throws on token limit smaller than prompt minimum size", () => {
+  expect(() => {
+    Promptre.render("test", { ...renderOptions, tokenLimit: 0 });
+  }).toThrowError("token limit");
+});
