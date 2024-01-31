@@ -1,4 +1,4 @@
-import { encode } from "@promptre/tokenizer";
+import { countTokens, getContextSize } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node.js";
 import type { PromptElement, PromptNode } from "./node.js";
@@ -94,12 +94,13 @@ function renderRecursive(
 }
 
 export interface RenderOptions {
+  model: string;
   tokenLimit?: number;
 }
 
-export function render(node: PromptNode, options: RenderOptions = {}): string {
+export function render(node: PromptNode, options: RenderOptions): string {
   // TODO: use a model's token limit as default
-  const { tokenLimit = 2048 } = options;
+  const { model, tokenLimit = getContextSize(model) } = options;
 
   // compute priority levels to binary search on
   const priorities: Set<number> = new Set();
@@ -115,7 +116,7 @@ export function render(node: PromptNode, options: RenderOptions = {}): string {
     const candidatePriority = sortedPriorities[candidateIndex]!;
 
     const result = renderRecursive(node, candidatePriority);
-    const numTokens = result ? encode(result) : null;
+    const numTokens = result ? countTokens(result, model) : null;
 
     if (numTokens !== null && numTokens <= tokenLimit) {
       maxPriorityIndex = candidateIndex;
