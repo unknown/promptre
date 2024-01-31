@@ -159,5 +159,14 @@ export function render(node: PromptNode, options: RenderOptions): string {
     );
   }
 
-  return renderRecursive(node, maxPriority) ?? "";
+  // TODO: this is the repeat of a calculation made while binary searching
+  const result = renderRecursive(node, maxPriority) ?? "";
+  const numTokens = countTokens(result, model);
+  if (numTokens > tokenLimit) {
+    throw new Error(
+      `Could not render valid prompt with ${tokenLimit} token limit.`,
+    );
+  }
+
+  return result;
 }
