@@ -1,21 +1,29 @@
 import { countTokens, getContextSize } from "@promptre/tokenizer";
 
-import { isLiteral } from "./node.js";
-import type { PromptElement, PromptNode } from "./node.js";
+import { isLiteral } from "./node";
+import type { PromptNode } from "./node";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
   JSX.IntrinsicElements[T];
 
+// TODO: fix types for FCs
 export function createElement<T extends IntrinsicElement>(
-  tag: T,
+  tag: T | ((props: Record<string, unknown>) => PromptNode),
   props: IntrinsicElementProps<T> | null,
   ...children: PromptNode[]
-): PromptElement {
+): PromptNode {
   const propsToPass = {
     ...props,
     children,
   };
+
+  if (typeof tag === "function") {
+    return {
+      type: tag,
+      props: propsToPass,
+    };
+  }
 
   switch (tag) {
     case "scope": {
@@ -43,6 +51,12 @@ function computePriorities(
     for (const child of node) {
       computePriorities(child, parentPriority, priorities);
     }
+    return;
+  }
+
+  if (typeof node.type === "function") {
+    const component = node.type(node.props);
+    computePriorities(component, parentPriority, priorities);
     return;
   }
 
@@ -74,6 +88,11 @@ function renderRecursive(
       .join(" ");
   }
 
+  if (typeof node.type === "function") {
+    const component = node.type(node.props);
+    return renderRecursive(component, priorityLimit);
+  }
+
   switch (node.type) {
     case "scope": {
       const priority = node.props.p;
@@ -99,8 +118,9 @@ export interface RenderOptions {
 }
 
 export function render(node: PromptNode, options: RenderOptions): string {
-  // TODO: use a model's token limit as default
   const { model, tokenLimit = getContextSize(model) } = options;
+
+  // TODO: render all function components to `PromptNode` first
 
   // compute priority levels to binary search on
   const priorities: Set<number> = new Set();
@@ -126,13 +146,18 @@ export function render(node: PromptNode, options: RenderOptions): string {
     }
   }
 
-  if (maxPriorityIndex === null) {
+  const maxPriority =
+    maxPriorityIndex !== null
+      ? sortedPriorities[maxPriorityIndex]!
+      : priorities.size === 0
+        ? 0
+        : null;
+
+  if (maxPriority === null) {
     throw new Error(
       `Could not render valid prompt with ${tokenLimit} token limit.`,
     );
   }
-
-  const maxPriority = sortedPriorities[maxPriorityIndex]!;
 
   return renderRecursive(node, maxPriority) ?? "";
 }
