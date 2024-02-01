@@ -85,7 +85,7 @@ function computePriorities(
 // TODO: what if a node has a higher priorty than its parent?
 function renderRecursive(
   node: PromptNode,
-  priorityLimit: number,
+  priorityLimit: number | null,
 ): string | null {
   if (isLiteral(node)) {
     return node ? node.toString() : null;
@@ -114,7 +114,7 @@ function renderRecursive(
         );
       }
 
-      if (priority > priorityLimit) {
+      if (priorityLimit !== null && priority > priorityLimit) {
         return null;
       }
 
@@ -131,7 +131,7 @@ export interface RenderOptions {
 export function render(node: PromptNode, options: RenderOptions): string {
   const { model, tokenLimit = getContextSize(model) } = options;
 
-  // TODO: render all function components to `PromptNode` first
+  // TODO: step to render all function components to `PromptNode` so that they're only rendered once
 
   // compute priority levels to binary search on
   const priorities: Set<number> = new Set();
@@ -157,11 +157,13 @@ export function render(node: PromptNode, options: RenderOptions): string {
     }
   }
 
+  // a null priority means no valid priority level exists
+  // an undefined priority means the prompt has no priorities
   const maxPriority =
     maxPriorityIndex !== null
       ? sortedPriorities[maxPriorityIndex]!
       : priorities.size === 0
-        ? 0
+        ? undefined
         : null;
 
   if (maxPriority === null) {
@@ -171,7 +173,7 @@ export function render(node: PromptNode, options: RenderOptions): string {
   }
 
   // TODO: this is the repeat of a calculation made while binary searching
-  const result = renderRecursive(node, maxPriority) ?? "";
+  const result = renderRecursive(node, maxPriority ?? null) ?? "";
   const numTokens = countTokens(result, model);
   if (numTokens > tokenLimit) {
     throw new Error(
