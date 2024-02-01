@@ -141,39 +141,30 @@ export function render(node: PromptNode, options: RenderOptions): string {
   // binary search to find max priority level
   let left = 0;
   let right = sortedPriorities.length - 1;
-  let maxPriorityIndex: number | null = null;
+  let maxPriority: number | null = null;
   while (left <= right) {
-    const candidateIndex = left + Math.floor((right - left) / 2);
-    const candidatePriority = sortedPriorities[candidateIndex]!;
+    const middle = left + Math.floor((right - left) / 2);
+    const candidatePriority = sortedPriorities[middle]!;
 
     const result = renderRecursive(node, candidatePriority);
     const numTokens = result ? countTokens(result, model) : null;
 
     if (numTokens === null || numTokens <= tokenLimit) {
-      maxPriorityIndex = candidateIndex;
-      left = candidateIndex + 1;
+      maxPriority = candidatePriority;
+      left = middle + 1;
     } else {
-      right = candidateIndex - 1;
+      right = middle - 1;
     }
   }
 
-  // a null priority means no valid priority level exists
-  // an undefined priority means the prompt has no priorities
-  const maxPriority =
-    maxPriorityIndex !== null
-      ? sortedPriorities[maxPriorityIndex]!
-      : priorities.size === 0
-        ? undefined
-        : null;
-
-  if (maxPriority === null) {
+  if (maxPriority === null && priorities.size > 0) {
     throw new Error(
       `Could not render valid prompt with ${tokenLimit} token limit.`,
     );
   }
 
   // TODO: this is the repeat of a calculation made while binary searching
-  const result = renderRecursive(node, maxPriority ?? null) ?? "";
+  const result = renderRecursive(node, maxPriority) ?? "";
   const numTokens = countTokens(result, model);
   if (numTokens > tokenLimit) {
     throw new Error(
