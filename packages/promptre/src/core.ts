@@ -2,6 +2,14 @@ import { countTokens, getContextSize } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node";
 import type { FunctionComponent, PromptElement, PromptNode } from "./node";
+import {
+  isMessagePrompt,
+  isStringPrompt,
+  joinPrompts,
+  Message,
+  promptToString,
+  type RenderedPrompt,
+} from "./prompt";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
@@ -85,6 +93,9 @@ function computePriorities(
       priorities.add(priority);
       computePriorities(node.props.children, priority, priorities);
     }
+    default: {
+      computePriorities(node.props.children, parentPriority, priorities);
+    }
   }
 }
 
@@ -92,17 +103,17 @@ function computePriorities(
 function renderRecursive(
   node: PromptNode,
   priorityLimit: number | null,
-): string | null {
+): RenderedPrompt | null {
   if (isLiteral(node)) {
     return node ? node.toString() : null;
   }
 
   if (Array.isArray(node)) {
-    const results = node.map((child) => renderRecursive(child, priorityLimit));
+    const results = node
+      .map((child) => renderRecursive(child, priorityLimit))
+      .filter((result): result is RenderedPrompt => result !== null);
 
-    return results
-      .filter((result): result is string => result !== null)
-      .join(" ");
+    return results.length > 0 ? joinPrompts(results) : null;
   }
 
   if (typeof node.type === "function") {
@@ -128,11 +139,30 @@ function renderRecursive(
       return renderRecursive(node.props.children, priorityLimit);
     }
     case "message": {
-      const prompt = renderRecursive(node.props.children, priorityLimit);
+      const childrenPrompt = renderRecursive(
+        node.props.children,
+        priorityLimit,
+      );
 
-      // TODO: finish this
+      let messages: Message[] = [];
+      if (childrenPrompt !== null && isStringPrompt(childrenPrompt)) {
+        messages = [{ role: node.props.role, content: childrenPrompt }];
+      } else if (childrenPrompt !== null && isMessagePrompt(childrenPrompt)) {
+        for (const message of childrenPrompt.messages) {
+          if (message.role !== node.props.role) {
+            throw new Error(
+              "Error rendering: nested message components cannot have differing message roles",
+            );
+          }
 
-      return prompt;
+          messages.push(message);
+        }
+      }
+
+      return {
+        messages,
+        type: "message",
+      };
     }
   }
 }
@@ -164,7 +194,7 @@ export interface RenderOptions {
 export function render(
   initialNode: PromptNode,
   options: RenderOptions,
-): string {
+): RenderedPrompt {
   const { model, tokenLimit = getContextSize(model) } = options;
 
   const node = renderFunctionComponents(initialNode);
@@ -183,7 +213,8 @@ export function render(
     const candidatePriority = sortedPriorities[middle]!;
 
     const result = renderRecursive(node, candidatePriority);
-    const numTokens = result ? countTokens(result, model) : null;
+    const numTokens =
+      result !== null ? countTokens(promptToString(result), model) : null;
 
     if (numTokens === null || numTokens <= tokenLimit) {
       maxPriority = candidatePriority;
@@ -201,7 +232,7 @@ export function render(
 
   // TODO: this is the repeat of a calculation made while binary searching
   const result = renderRecursive(node, maxPriority) ?? "";
-  const numTokens = countTokens(result, model);
+  const numTokens = countTokens(promptToString(result), model);
 
   if (numTokens > tokenLimit) {
     throw new Error(
