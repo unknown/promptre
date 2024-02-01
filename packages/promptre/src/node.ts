@@ -26,13 +26,21 @@ export type ScopeElement = Element<
   { children: PromptNode }
 >;
 
+export type MessageProps = PropsWithChildren<{
+  role: "assistant" | "system" | "user";
+}>;
+export type MessageElement = Element<"message", MessageProps, {}>;
+
 export interface FunctionComponent<P = {}> {
   (props: P): PromptNode;
 }
 export type FunctionComponentElement = Element<FunctionComponent, {}>;
 
 // represents elements that can be created via `Promptre.createElement`
-export type PromptElement = ScopeElement | FunctionComponentElement;
+export type PromptElement =
+  | ScopeElement
+  | MessageElement
+  | FunctionComponentElement;
 
 // represents anything a Prompt can render
 export type PromptNode = PromptNode[] | PromptElement | Literal;

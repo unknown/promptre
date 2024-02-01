@@ -1,9 +1,9 @@
 import type { PromptNode } from "../node";
 
 export type FragmentProps = {
-  children: PromptNode;
+  children?: PromptNode;
 };
 
-export function Fragment({ children }: FragmentProps) {
+export function Fragment({ children }: FragmentProps): PromptNode {
   return children;
 }

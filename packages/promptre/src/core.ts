@@ -21,7 +21,7 @@ export function createElement<P>(
 
 export function createElement<T extends IntrinsicElement | FunctionComponent>(
   tag: T,
-  props: Record<string, unknown>,
+  props: any, // TODO: is there a way to get type safety on this?
   ...children: PromptNode[]
 ): PromptElement {
   const propsToPass = {
@@ -40,6 +40,12 @@ export function createElement<T extends IntrinsicElement | FunctionComponent>(
     case "scope": {
       return {
         type: "scope",
+        props: propsToPass,
+      };
+    }
+    case "message": {
+      return {
+        type: "message",
         props: propsToPass,
       };
     }
@@ -120,6 +126,13 @@ function renderRecursive(
       }
 
       return renderRecursive(node.props.children, priorityLimit);
+    }
+    case "message": {
+      const prompt = renderRecursive(node.props.children, priorityLimit);
+
+      // TODO: finish this
+
+      return prompt;
     }
   }
 }
