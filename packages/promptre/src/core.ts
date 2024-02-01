@@ -66,9 +66,9 @@ function computePriorities(
   }
 
   if (typeof node.type === "function") {
-    const component = node.type(node.props);
-    computePriorities(component, parentPriority, priorities);
-    return;
+    throw new Error(
+      "Error rendering: function components should have been pre-rendered",
+    );
   }
 
   switch (node.type) {
@@ -100,8 +100,9 @@ function renderRecursive(
   }
 
   if (typeof node.type === "function") {
-    const component = node.type(node.props);
-    return renderRecursive(component, priorityLimit);
+    throw new Error(
+      "Error rendering: function components should have been pre-rendered",
+    );
   }
 
   switch (node.type) {
@@ -110,7 +111,7 @@ function renderRecursive(
 
       if (!priority) {
         throw new Error(
-          "Error rendering: failed to precalculate scope element's priority",
+          "Error rendering: scope elements should have had their priorities pre-calculated",
         );
       }
 
@@ -123,15 +124,37 @@ function renderRecursive(
   }
 }
 
+// Renders all function components to `PromptNode`s
+export function renderFunctionComponents(node: PromptNode): PromptNode {
+  if (isLiteral(node)) {
+    return node;
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((child) => renderFunctionComponents(child));
+  }
+
+  if (typeof node.type === "function") {
+    const component = node.type(node.props);
+    return renderFunctionComponents(component);
+  }
+
+  node.props.children = renderFunctionComponents(node.props.children);
+  return node;
+}
+
 export interface RenderOptions {
   model: string;
   tokenLimit?: number;
 }
 
-export function render(node: PromptNode, options: RenderOptions): string {
+export function render(
+  initialNode: PromptNode,
+  options: RenderOptions,
+): string {
   const { model, tokenLimit = getContextSize(model) } = options;
 
-  // TODO: step to render all function components to `PromptNode` so that they're only rendered once
+  const node = renderFunctionComponents(initialNode);
 
   // compute priority levels to binary search on
   const priorities: Set<number> = new Set();
