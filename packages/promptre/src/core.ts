@@ -1,16 +1,27 @@
 import { countTokens, getContextSize } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node";
-import type { PromptNode } from "./node";
+import type { FunctionComponent, PromptNode } from "./node";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
   JSX.IntrinsicElements[T];
 
-// TODO: fix types for FCs
 export function createElement<T extends IntrinsicElement>(
-  tag: T | ((props: Record<string, unknown>) => PromptNode),
-  props: IntrinsicElementProps<T> | null,
+  tag: T,
+  props: IntrinsicElementProps<T>,
+  ...children: PromptNode[]
+): PromptNode;
+
+export function createElement<P>(
+  tag: FunctionComponent<P>,
+  props: P,
+  ...children: PromptNode[]
+): PromptNode;
+
+export function createElement<T extends IntrinsicElement | FunctionComponent>(
+  tag: T,
+  props: Record<string, unknown>,
   ...children: PromptNode[]
 ): PromptNode {
   const propsToPass = {
