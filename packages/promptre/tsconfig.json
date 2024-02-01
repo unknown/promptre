@@ -30,6 +30,7 @@
 
     "jsx": "react",
     "jsxFactory": "Promptre.createElement",
+    "jsxFragmentFactory": "Promptre.Fragment",
 
     "rootDir": "src"
   },

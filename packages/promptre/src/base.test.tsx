@@ -1,6 +1,5 @@
-import * as Promptre from ".";
+import * as Promptre from "./index";
 import { countTokens } from "@promptre/tokenizer";
-
 import { expect, test } from "vitest";
 
 const scopeTest = (
@@ -19,9 +18,9 @@ const model = "gpt-4";
 const renderOptions: Promptre.RenderOptions = { model };
 
 test("scope renders all of its children", () => {
-  expect(Promptre.render(scopeTest, renderOptions)).toBe(
-    "Scope 1 Text Scope 2 Scope 3",
-  );
+  expect(
+    Promptre.render(scopeTest, { ...renderOptions, tokenLimit: Infinity }),
+  ).toBe("Scope 1 Text Scope 2 Scope 3");
 });
 
 test("rendering scopes respects token limit", () => {
@@ -36,4 +35,17 @@ test("throws on token limit smaller than prompt minimum size", () => {
   expect(() => {
     Promptre.render("test", { ...renderOptions, tokenLimit: 0 });
   }).toThrowError("token limit");
+});
+
+test("fragment renders all children", () => {
+  const fragmentTest = (
+    <>
+      {scopeTest}
+      {scopeTest}
+    </>
+  );
+
+  expect(
+    Promptre.render(fragmentTest, { ...renderOptions, tokenLimit: Infinity }),
+  ).toBe("Scope 1 Text Scope 2 Scope 3 Scope 1 Text Scope 2 Scope 3");
 });

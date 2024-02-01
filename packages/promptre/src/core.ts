@@ -1,7 +1,7 @@
 import { countTokens, getContextSize } from "@promptre/tokenizer";
 
-import { isLiteral } from "./node.js";
-import type { PromptElement, PromptNode } from "./node.js";
+import { isLiteral } from "./node";
+import type { FunctionComponent, PromptElement, PromptNode } from "./node";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
@@ -9,13 +9,32 @@ type IntrinsicElementProps<T extends IntrinsicElement> =
 
 export function createElement<T extends IntrinsicElement>(
   tag: T,
-  props: IntrinsicElementProps<T> | null,
+  props: IntrinsicElementProps<T>,
+  ...children: PromptNode[]
+): PromptElement;
+
+export function createElement<P>(
+  tag: FunctionComponent<P>,
+  props: P,
+  ...children: PromptNode[]
+): PromptElement;
+
+export function createElement<T extends IntrinsicElement | FunctionComponent>(
+  tag: T,
+  props: Record<string, unknown>,
   ...children: PromptNode[]
 ): PromptElement {
   const propsToPass = {
     ...props,
     children,
   };
+
+  if (typeof tag === "function") {
+    return {
+      type: tag,
+      props: propsToPass,
+    };
+  }
 
   switch (tag) {
     case "scope": {
@@ -46,6 +65,12 @@ function computePriorities(
     return;
   }
 
+  if (typeof node.type === "function") {
+    const component = node.type(node.props);
+    computePriorities(component, parentPriority, priorities);
+    return;
+  }
+
   switch (node.type) {
     case "scope": {
       const priority = node.props.p ?? parentPriority + (node.props.prel ?? 0);
@@ -60,7 +85,7 @@ function computePriorities(
 // TODO: what if a node has a higher priorty than its parent?
 function renderRecursive(
   node: PromptNode,
-  priorityLimit: number,
+  priorityLimit: number | null,
 ): string | null {
   if (isLiteral(node)) {
     return node ? node.toString() : null;
@@ -74,6 +99,11 @@ function renderRecursive(
       .join(" ");
   }
 
+  if (typeof node.type === "function") {
+    const component = node.type(node.props);
+    return renderRecursive(component, priorityLimit);
+  }
+
   switch (node.type) {
     case "scope": {
       const priority = node.props.p;
@@ -84,7 +114,7 @@ function renderRecursive(
         );
       }
 
-      if (priority > priorityLimit) {
+      if (priorityLimit !== null && priority > priorityLimit) {
         return null;
       }
 
@@ -99,8 +129,9 @@ export interface RenderOptions {
 }
 
 export function render(node: PromptNode, options: RenderOptions): string {
-  // TODO: use a model's token limit as default
   const { model, tokenLimit = getContextSize(model) } = options;
+
+  // TODO: step to render all function components to `PromptNode` so that they're only rendered once
 
   // compute priority levels to binary search on
   const priorities: Set<number> = new Set();
@@ -110,29 +141,37 @@ export function render(node: PromptNode, options: RenderOptions): string {
   // binary search to find max priority level
   let left = 0;
   let right = sortedPriorities.length - 1;
-  let maxPriorityIndex: number | null = null;
+  let maxPriority: number | null = null;
   while (left <= right) {
-    const candidateIndex = left + Math.floor((right - left) / 2);
-    const candidatePriority = sortedPriorities[candidateIndex]!;
+    const middle = left + Math.floor((right - left) / 2);
+    const candidatePriority = sortedPriorities[middle]!;
 
     const result = renderRecursive(node, candidatePriority);
     const numTokens = result ? countTokens(result, model) : null;
 
     if (numTokens === null || numTokens <= tokenLimit) {
-      maxPriorityIndex = candidateIndex;
-      left = candidateIndex + 1;
+      maxPriority = candidatePriority;
+      left = middle + 1;
     } else {
-      right = candidateIndex - 1;
+      right = middle - 1;
     }
   }
 
-  if (maxPriorityIndex === null) {
+  if (maxPriority === null && priorities.size > 0) {
     throw new Error(
       `Could not render valid prompt with ${tokenLimit} token limit.`,
     );
   }
 
-  const maxPriority = sortedPriorities[maxPriorityIndex]!;
+  // TODO: this is the repeat of a calculation made while binary searching
+  const result = renderRecursive(node, maxPriority) ?? "";
+  const numTokens = countTokens(result, model);
 
-  return renderRecursive(node, maxPriority) ?? "";
+  if (numTokens > tokenLimit) {
+    throw new Error(
+      `Could not render valid prompt with ${tokenLimit} token limit.`,
+    );
+  }
+
+  return result;
 }

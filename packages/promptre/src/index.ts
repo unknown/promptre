@@ -1,7 +1,9 @@
-import type { PromptElement, ScopeProps } from "./node.js";
+import type { PromptElement, ScopeProps } from "./node";
 
-export * from "./node.js";
-export * from "./core.js";
+export * from "./node";
+export * from "./core";
+
+export * from "./components/fragment";
 
 declare global {
   namespace JSX {
