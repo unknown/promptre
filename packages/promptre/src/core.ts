@@ -6,10 +6,9 @@ import {
   isMessagePrompt,
   isStringPrompt,
   joinPrompts,
-  Message,
   promptToString,
-  type RenderedPrompt,
 } from "./prompt";
+import type { Message, RenderedPrompt } from "./prompt";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
