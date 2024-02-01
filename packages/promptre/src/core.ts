@@ -1,7 +1,7 @@
 import { countTokens, getContextSize } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node";
-import type { FunctionComponent, PromptNode } from "./node";
+import type { FunctionComponent, PromptElement, PromptNode } from "./node";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
@@ -11,19 +11,19 @@ export function createElement<T extends IntrinsicElement>(
   tag: T,
   props: IntrinsicElementProps<T>,
   ...children: PromptNode[]
-): PromptNode;
+): PromptElement;
 
 export function createElement<P>(
   tag: FunctionComponent<P>,
   props: P,
   ...children: PromptNode[]
-): PromptNode;
+): PromptElement;
 
 export function createElement<T extends IntrinsicElement | FunctionComponent>(
   tag: T,
   props: Record<string, unknown>,
   ...children: PromptNode[]
-): PromptNode {
+): PromptElement {
   const propsToPass = {
     ...props,
     children,
