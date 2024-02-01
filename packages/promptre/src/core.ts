@@ -28,7 +28,7 @@ export function createElement<P>(
 
 export function createElement<T extends IntrinsicElement | FunctionComponent>(
   tag: T,
-  props: any, // TODO: is there a way to get type safety on this?
+  props: any,
   ...children: PromptNode[]
 ): PromptElement {
   const propsToPass = {
