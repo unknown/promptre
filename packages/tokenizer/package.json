@@ -21,6 +21,7 @@
     "node": ">= 10"
   },
   "scripts": {
+    "clean": "rm -rf .turbo node_modules target",
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",

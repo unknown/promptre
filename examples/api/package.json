@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "clean": "rm -rf .turbo node_modules dist",
     "dev": "pnpm with-env tsx watch --clear-screen=false src/index.ts --tsconfig=tsconfig.json",
     "build": "tsc",
     "start": "node dist/index.js",
