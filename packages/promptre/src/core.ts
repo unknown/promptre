@@ -86,9 +86,11 @@ function computePriorities(
       node.props.p = priority;
       priorities.add(priority);
       computePriorities(node.props.children, priority, priorities);
+      break;
     }
     default: {
       computePriorities(node.props.children, parentPriority, priorities);
+      break;
     }
   }
 }
@@ -156,6 +158,7 @@ function renderRecursive(
 
             messages.push(message);
           }
+          break;
         }
       }
 
