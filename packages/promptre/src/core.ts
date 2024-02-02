@@ -120,7 +120,7 @@ function renderRecursive(
     case "scope": {
       const priority = node.props.p;
 
-      if (!priority) {
+      if (priority === undefined) {
         throw new Error(
           "Error rendering: scope elements should have had their priorities pre-calculated",
         );

@@ -53,7 +53,7 @@ export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
       }
     } else {
       throw new Error(
-        `Cannot join prompts of different types: \"${result.type}\", \"${currPrompt.type}\"`,
+        `Cannot join prompts of types: \"${result.type}\", \"${currPrompt.type}\"`,
       );
     }
   }
