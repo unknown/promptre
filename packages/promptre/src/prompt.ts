@@ -67,7 +67,7 @@ export function promptToString(prompt: RenderedPrompt): string {
       return prompt.content;
     }
     case "message": {
-      return prompt.messages.join();
+      return prompt.messages.map((message) => message.content).join("");
     }
     default: {
       throw new Error(`Failed to convert prompt ${prompt} to string`);

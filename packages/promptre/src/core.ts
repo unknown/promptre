@@ -238,6 +238,8 @@ export function render(
     type: "string",
     content: "",
   };
+
+  // TODO: handle chat completion messages differently than strings
   const numTokens = countTokens(promptToString(result), model);
 
   if (numTokens > tokenLimit) {

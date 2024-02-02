@@ -2,7 +2,8 @@
   "name": "promptre",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf .turbo node_modules dist",
     "build": "tsc",
