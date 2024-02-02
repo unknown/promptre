@@ -1,9 +1,9 @@
 import * as Promptre from "./index";
-import { countTokens } from "@promptre/tokenizer";
+import { Tokenizer } from "@promptre/tokenizer";
 import { expect, test } from "vitest";
 import { promptToString } from "./prompt";
 
-const model = "gpt-4";
+const tokenizer = new Tokenizer("gpt-4");
 
 function ScopeTest() {
   return (
@@ -19,7 +19,7 @@ function ScopeTest() {
 
 test("scope renders all of its children", () => {
   expect(
-    Promptre.render(<ScopeTest />, { model, tokenLimit: Infinity }),
+    Promptre.render(<ScopeTest />, { tokenizer, tokenLimit: Infinity }),
   ).toMatchObject({
     type: "string",
     content: "Scope 1 Text Scope 2 Scope 3",
@@ -34,7 +34,7 @@ test("fragment renders all of its children", () => {
   );
 
   expect(
-    Promptre.render(<FragmentTest />, { model, tokenLimit: Infinity }),
+    Promptre.render(<FragmentTest />, { tokenizer, tokenLimit: Infinity }),
   ).toMatchObject({
     type: "string",
     content: "Scope 1 Text Scope 2 Scope 3 Scope 1 Text Scope 2 Scope 3",
@@ -43,21 +43,21 @@ test("fragment renders all of its children", () => {
 
 test("rendering scopes respects token limit", () => {
   for (let tokenLimit = 0; tokenLimit <= 10; ++tokenLimit) {
-    const prompt = Promptre.render(<ScopeTest />, { model, tokenLimit });
-    const tokens = countTokens(promptToString(prompt), model);
+    const prompt = Promptre.render(<ScopeTest />, { tokenizer, tokenLimit });
+    const tokens = tokenizer.countTokens(promptToString(prompt));
     expect(tokens).lte(tokenLimit);
   }
 });
 
 test("throws on token limit smaller than prompt minimum size", () => {
   expect(() => {
-    Promptre.render("test", { model, tokenLimit: 0 });
+    Promptre.render("test", { tokenizer, tokenLimit: 0 });
   }).toThrowError("token limit");
 });
 
 test("prompts with message tags render to message prompts", () => {
   const options = {
-    model,
+    tokenizer,
     tokenLimit: Infinity,
   };
 
@@ -107,7 +107,7 @@ test("throw on rendering prompts with different nested messages", () => {
         </Promptre.SystemMessage>
       </Promptre.AssistantMessage>,
       {
-        model,
+        tokenizer,
         tokenLimit: Infinity,
       },
     );

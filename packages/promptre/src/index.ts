@@ -13,6 +13,8 @@ export * from "./components/assistant-message";
 export * from "./components/system-message";
 export * from "./components/user-message";
 
+export * from "@promptre/tokenizer";
+
 declare global {
   namespace JSX {
     interface IntrinsicElements {

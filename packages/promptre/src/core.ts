@@ -1,4 +1,4 @@
-import { countTokens, getContextSize } from "@promptre/tokenizer";
+import { Tokenizer } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node";
 import type { FunctionComponent, PromptElement, PromptNode } from "./node";
@@ -190,7 +190,7 @@ export function renderFunctionComponents(node: PromptNode): PromptNode {
 }
 
 export interface RenderOptions {
-  model: string;
+  tokenizer: Tokenizer;
   tokenLimit?: number;
 }
 
@@ -198,7 +198,7 @@ export function render(
   initialNode: PromptNode,
   options: RenderOptions,
 ): RenderedPrompt {
-  const { model, tokenLimit = getContextSize(model) } = options;
+  const { tokenizer, tokenLimit = tokenizer.getContextSize() } = options;
 
   const node = renderFunctionComponents(initialNode);
 
@@ -219,7 +219,7 @@ export function render(
 
     if (prompt) {
       // TODO: handle chat completion messages differently than strings
-      const numTokens = countTokens(promptToString(prompt), model);
+      const numTokens = tokenizer.countTokens(promptToString(prompt));
       result = { prompt, numTokens };
     } else {
       result = null;
@@ -234,7 +234,9 @@ export function render(
 
       const prompt = renderRecursive(node, candidatePriority);
       // TODO: handle chat completion messages differently than strings
-      const numTokens = prompt ? countTokens(promptToString(prompt), model) : 0;
+      const numTokens = prompt
+        ? tokenizer.countTokens(promptToString(prompt))
+        : 0;
 
       if (prompt && numTokens <= tokenLimit) {
         left = middle + 1;
