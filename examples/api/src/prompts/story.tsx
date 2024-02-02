@@ -4,7 +4,7 @@ export type StoryProps = {
   protagonist: string;
 };
 
-export function Story({ protagonist }: StoryProps) {
+export default function Story({ protagonist }: StoryProps) {
   return (
     <>
       <Promptre.SystemMessage>
@@ -16,4 +16,12 @@ export function Story({ protagonist }: StoryProps) {
       </Promptre.AssistantMessage>
     </>
   );
+}
+
+export async function onStream(content: string) {
+  return content.toLowerCase();
+}
+
+export async function onOutput(content: string) {
+  return content.toUpperCase();
 }

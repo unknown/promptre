@@ -1,23 +1,31 @@
 import * as Promptre from "promptre";
 import OpenAI from "openai";
 import Fastify from "fastify";
-import { Story } from "./prompts/story";
+import * as Story from "./prompts/story";
 
 const fastify = Fastify({ logger: true });
 const openai = new OpenAI();
 
 const model = "gpt-3.5-turbo";
 
-fastify.get<{ Querystring: { protagonist?: string } }>(
+fastify.get<{ Querystring: { protagonist: string; stream?: boolean } }>(
   "/story",
+  {
+    schema: {
+      querystring: {
+        type: "object",
+        properties: {
+          protagonist: { type: "string" },
+          stream: { type: "boolean" },
+        },
+        required: ["protagonist"],
+      },
+    },
+  },
   async function handler(request, reply) {
-    const { protagonist } = request.query;
+    const { protagonist, stream } = request.query;
 
-    if (!protagonist) {
-      return reply.status(400).send("Missing protagonist query");
-    }
-
-    const prompt = Promptre.render(Story({ protagonist }), { model });
+    const prompt = Promptre.render(Story.default({ protagonist }), { model });
 
     const messages =
       prompt.type === "string"
@@ -29,20 +37,46 @@ fastify.get<{ Querystring: { protagonist?: string } }>(
           ]
         : prompt.messages;
 
-    const stream = await openai.chat.completions.create({
-      model,
-      messages,
-      stream: true,
-    });
+    if (stream) {
+      const chatStream = await openai.chat.completions.create({
+        model,
+        messages,
+        stream: true,
+      });
 
-    reply.hijack();
-    reply.raw.writeHead(200, { "Content-Type": "text/event-stream" });
+      reply.hijack();
+      reply.raw.writeHead(200, { "Content-Type": "text/event-stream" });
 
-    for await (const part of stream) {
-      reply.raw.write(part.choices[0]?.delta?.content ?? "");
+      for await (const chunk of chatStream) {
+        const content = chunk.choices[0]?.delta?.content;
+
+        if (content === undefined || content === null) {
+          continue;
+        }
+
+        const transformed = await Story.onStream(content);
+
+        reply.raw.write(transformed);
+      }
+
+      return reply.raw.end();
+    } else {
+      const chat = await openai.chat.completions.create({
+        model,
+        messages,
+        stream: false,
+      });
+
+      const content = chat.choices[0]?.message?.content;
+
+      if (content === undefined || content === null) {
+        return reply.status(500).send("Completion is invalid");
+      }
+
+      const transformed = await Story.onOutput(content);
+
+      return reply.send(transformed);
     }
-
-    return reply.raw.end();
   },
 );
 
