@@ -18,9 +18,12 @@ function ScopeTest() {
 }
 
 test("scope renders all of its children", () => {
-  expect(Promptre.render(<ScopeTest />, { model, tokenLimit: Infinity })).toBe(
-    "Scope 1 Text Scope 2 Scope 3",
-  );
+  expect(
+    Promptre.render(<ScopeTest />, { model, tokenLimit: Infinity }),
+  ).toMatchObject({
+    type: "string",
+    content: "Scope 1 Text Scope 2 Scope 3",
+  });
 });
 
 test("fragment renders all of its children", () => {
@@ -32,7 +35,10 @@ test("fragment renders all of its children", () => {
 
   expect(
     Promptre.render(<FragmentTest />, { model, tokenLimit: Infinity }),
-  ).toBe("Scope 1 Text Scope 2 Scope 3 Scope 1 Text Scope 2 Scope 3");
+  ).toMatchObject({
+    type: "string",
+    content: "Scope 1 Text Scope 2 Scope 3 Scope 1 Text Scope 2 Scope 3",
+  });
 });
 
 test("rendering scopes respects token limit", () => {
