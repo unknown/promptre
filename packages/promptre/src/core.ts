@@ -2,12 +2,7 @@ import { countTokens, getContextSize } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node";
 import type { FunctionComponent, PromptElement, PromptNode } from "./node";
-import {
-  isMessagePrompt,
-  isStringPrompt,
-  joinPrompts,
-  promptToString,
-} from "./prompt";
+import { joinPrompts, promptToString } from "./prompt";
 import type { Message, RenderedPrompt } from "./prompt";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
@@ -104,7 +99,7 @@ function renderRecursive(
   priorityLimit: number | null,
 ): RenderedPrompt | null {
   if (isLiteral(node)) {
-    return node ? node.toString() : null;
+    return node ? { type: "string", content: node.toString() } : null;
   }
 
   if (Array.isArray(node)) {
@@ -144,17 +139,23 @@ function renderRecursive(
       );
 
       let messages: Message[] = [];
-      if (childrenPrompt !== null && isStringPrompt(childrenPrompt)) {
-        messages = [{ role: node.props.role, content: childrenPrompt }];
-      } else if (childrenPrompt !== null && isMessagePrompt(childrenPrompt)) {
-        for (const message of childrenPrompt.messages) {
-          if (message.role !== node.props.role) {
-            throw new Error(
-              "Error rendering: nested message components cannot have differing message roles",
-            );
-          }
+      switch (childrenPrompt?.type) {
+        case "string": {
+          messages = [
+            { role: node.props.role, content: promptToString(childrenPrompt) },
+          ];
+          break;
+        }
+        case "message": {
+          for (const message of childrenPrompt.messages) {
+            if (message.role !== node.props.role) {
+              throw new Error(
+                "Error rendering: nested message components cannot have differing message roles",
+              );
+            }
 
-          messages.push(message);
+            messages.push(message);
+          }
         }
       }
 
@@ -230,7 +231,10 @@ export function render(
   }
 
   // TODO: this is the repeat of a calculation made while binary searching
-  const result = renderRecursive(node, maxPriority) ?? "";
+  const result = renderRecursive(node, maxPriority) ?? {
+    type: "string",
+    content: "",
+  };
   const numTokens = countTokens(promptToString(result), model);
 
   if (numTokens > tokenLimit) {

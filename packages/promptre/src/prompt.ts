@@ -1,8 +1,7 @@
-export type StringPrompt = string;
-
-export function isStringPrompt(prompt: RenderedPrompt): prompt is StringPrompt {
-  return typeof prompt === "string";
-}
+export type StringPrompt = {
+  type: "string";
+  content: string;
+};
 
 export type AssistantMessage = {
   role: "assistant";
@@ -26,12 +25,6 @@ export type MessagePrompt = {
   messages: Message[];
 };
 
-export function isMessagePrompt(
-  prompt: RenderedPrompt,
-): prompt is MessagePrompt {
-  return typeof prompt === "object" && prompt.type === "message";
-}
-
 export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
   let result: RenderedPrompt | undefined = prompts[0];
 
@@ -46,9 +39,9 @@ export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
       continue;
     }
 
-    if (isStringPrompt(result) && isStringPrompt(currPrompt)) {
-      result += currPrompt;
-    } else if (isMessagePrompt(result) && isMessagePrompt(currPrompt)) {
+    if (result.type === "string" && currPrompt.type === "string") {
+      result.content += promptToString(currPrompt);
+    } else if (result.type === "message" && currPrompt.type === "message") {
       for (const message of currPrompt.messages) {
         // join messages of the same role
         const lastMessage = result.messages.at(-1);
@@ -60,7 +53,7 @@ export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
       }
     } else {
       throw new Error(
-        `Cannot join prompts of different types: \"${result}\", \"${currPrompt}\"`,
+        `Cannot join prompts of different types: \"${result.type}\", \"${currPrompt.type}\"`,
       );
     }
   }
@@ -68,13 +61,18 @@ export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
   return result;
 }
 
-export function promptToString(prompt: RenderedPrompt) {
-  if (isStringPrompt(prompt)) {
-    return prompt;
-  } else if (isMessagePrompt(prompt)) {
-    return prompt.messages.join();
+export function promptToString(prompt: RenderedPrompt): string {
+  switch (prompt.type) {
+    case "string": {
+      return prompt.content;
+    }
+    case "message": {
+      return prompt.messages.join();
+    }
+    default: {
+      throw new Error(`Failed to convert prompt ${prompt} to string`);
+    }
   }
-  throw new Error(`Failed to convert prompt ${prompt} to string`);
 }
 
 export type RenderedPrompt = StringPrompt | MessagePrompt;
