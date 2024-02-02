@@ -207,46 +207,49 @@ export function render(
   computePriorities(node, 0, priorities);
   const sortedPriorities = Array.from(priorities).sort((a, b) => a - b);
 
-  // binary search to find max priority level
-  let left = 0;
-  let right = sortedPriorities.length - 1;
-  let maxPriority: number | null = null;
-  while (left <= right) {
-    const middle = left + Math.floor((right - left) / 2);
-    const candidatePriority = sortedPriorities[middle]!;
+  type Result = {
+    prompt: RenderedPrompt;
+    numTokens: number;
+  };
+  let result: Result | null | undefined = undefined;
 
-    const result = renderRecursive(node, candidatePriority);
-    const numTokens =
-      result !== null ? countTokens(promptToString(result), model) : null;
+  if (sortedPriorities.length === 0) {
+    // render without priorities
+    const prompt = renderRecursive(node, null);
 
-    if (numTokens === null || numTokens <= tokenLimit) {
-      maxPriority = candidatePriority;
-      left = middle + 1;
+    if (prompt) {
+      // TODO: handle chat completion messages differently than strings
+      const numTokens = countTokens(promptToString(prompt), model);
+      result = { prompt, numTokens };
     } else {
-      right = middle - 1;
+      result = null;
+    }
+  } else {
+    // binary search to find the best prompt
+    let left = 0;
+    let right = sortedPriorities.length - 1;
+    while (left <= right) {
+      const middle = left + Math.floor((right - left) / 2);
+      const candidatePriority = sortedPriorities[middle]!;
+
+      const prompt = renderRecursive(node, candidatePriority);
+      // TODO: handle chat completion messages differently than strings
+      const numTokens = prompt ? countTokens(promptToString(prompt), model) : 0;
+
+      if (prompt && numTokens <= tokenLimit) {
+        left = middle + 1;
+        result = { prompt, numTokens };
+      } else {
+        right = middle - 1;
+      }
     }
   }
 
-  if (maxPriority === null && priorities.size > 0) {
+  if (result === null || (result?.numTokens ?? 0) > tokenLimit) {
     throw new Error(
       `Could not render valid prompt with ${tokenLimit} token limit.`,
     );
   }
 
-  // TODO: this is the repeat of a calculation made while binary searching
-  const result = renderRecursive(node, maxPriority) ?? {
-    type: "string",
-    content: "",
-  };
-
-  // TODO: handle chat completion messages differently than strings
-  const numTokens = countTokens(promptToString(result), model);
-
-  if (numTokens > tokenLimit) {
-    throw new Error(
-      `Could not render valid prompt with ${tokenLimit} token limit.`,
-    );
-  }
-
-  return result;
+  return result?.prompt ?? { type: "string", content: "" };
 }
