@@ -8,7 +8,6 @@ const openai = new OpenAI();
 
 const model = "gpt-3.5-turbo";
 
-// Declare a route
 fastify.get<{ Querystring: { protagonist?: string } }>(
   "/story",
   async function handler(request, reply) {
