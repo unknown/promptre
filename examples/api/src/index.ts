@@ -7,6 +7,7 @@ const fastify = Fastify({ logger: true });
 const openai = new OpenAI();
 
 const model = "gpt-3.5-turbo";
+const tokenizer = new Promptre.Tokenizer(model);
 
 fastify.get<{ Querystring: { protagonist: string; stream?: boolean } }>(
   "/story",
@@ -25,7 +26,9 @@ fastify.get<{ Querystring: { protagonist: string; stream?: boolean } }>(
   async function handler(request, reply) {
     const { protagonist, stream } = request.query;
 
-    const prompt = Promptre.render(Story.default({ protagonist }), { model });
+    const prompt = Promptre.render(Story.default({ protagonist }), {
+      tokenizer,
+    });
 
     const messages =
       prompt.type === "string"
