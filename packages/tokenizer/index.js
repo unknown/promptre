@@ -295,7 +295,6 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { countTokens, getContextSize } = nativeBinding
+const { Tokenizer } = nativeBinding
 
-module.exports.countTokens = countTokens
-module.exports.getContextSize = getContextSize
+module.exports.Tokenizer = Tokenizer
