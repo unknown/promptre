@@ -83,7 +83,9 @@ function computePriorities(
     case "scope": {
       const priority = node.props.p ?? parentPriority + (node.props.prel ?? 0);
       // store priorities for re-use later (e.g. rendering)
-      node.props.p = priority;
+      if (node.props.p === undefined) {
+        node.props.p = priority;
+      }
       priorities.add(priority);
       computePriorities(node.props.children, priority, priorities);
       break;
