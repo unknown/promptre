@@ -108,9 +108,14 @@ function renderRecursive(
   }
 
   if (Array.isArray(node)) {
-    const results = node
-      .map((child) => renderRecursive(child, priorityLimit))
-      .filter((result): result is RenderedPrompt => result !== null);
+    const results: RenderedPrompt[] = [];
+
+    for (const child of node) {
+      const renderedChild = renderRecursive(child, priorityLimit);
+      if (renderedChild !== null) {
+        results.push(renderedChild);
+      }
+    }
 
     return results.length > 0 ? joinPrompts(results) : null;
   }
