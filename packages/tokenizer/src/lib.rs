@@ -8,7 +8,7 @@ use tiktoken_rs::{get_bpe_from_tokenizer, model, tokenizer, CoreBPE};
 #[napi]
 pub struct Tokenizer {
   bpe: CoreBPE,
-  context_size: i32,
+  pub model: String,
 }
 
 #[napi]
@@ -17,8 +17,8 @@ impl Tokenizer {
   pub fn new(model: String) -> Self {
     let tokenizer = tokenizer::get_tokenizer(&model).unwrap();
     Self {
+      model,
       bpe: get_bpe_from_tokenizer(tokenizer).unwrap(),
-      context_size: model::get_context_size(&model) as i32,
     }
   }
 
@@ -30,6 +30,6 @@ impl Tokenizer {
 
   #[napi]
   pub fn get_context_size(&self) -> i32 {
-    self.context_size
+    model::get_context_size(&self.model) as i32
   }
 }

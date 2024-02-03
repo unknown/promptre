@@ -1,3 +1,5 @@
+import { Tokenizer } from "@promptre/tokenizer";
+
 export type StringPrompt = {
   type: "string";
   content: string;
@@ -24,6 +26,8 @@ export type MessagePrompt = {
   type: "message";
   messages: Message[];
 };
+
+export type RenderedPrompt = StringPrompt | MessagePrompt;
 
 export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
   let result: RenderedPrompt | undefined = prompts[0];
@@ -69,10 +73,28 @@ export function promptToString(prompt: RenderedPrompt): string {
     case "message": {
       return prompt.messages.map((message) => message.content).join("");
     }
-    default: {
-      throw new Error(`Failed to convert prompt ${prompt} to string`);
-    }
   }
 }
 
-export type RenderedPrompt = StringPrompt | MessagePrompt;
+export function countPromptTokens(
+  prompt: RenderedPrompt,
+  tokenizer: Tokenizer,
+): number {
+  switch (prompt.type) {
+    case "string": {
+      return tokenizer.countTokens(prompt.content);
+    }
+    case "message": {
+      let numTokens = 0;
+
+      for (const message of prompt.messages) {
+        numTokens += tokenizer.countTokens(message.content);
+        numTokens += 4; // e.g.: <|im_start|>user<|im_sep|><|im_end|>
+      }
+
+      numTokens += 3; // e.g.: <|start|>assistant<|im_sep|>
+
+      return numTokens;
+    }
+  }
+}

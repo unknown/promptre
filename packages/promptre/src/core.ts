@@ -2,7 +2,7 @@ import { Tokenizer } from "@promptre/tokenizer";
 
 import { isLiteral } from "./node";
 import type { FunctionComponent, PromptElement, PromptNode } from "./node";
-import { joinPrompts, promptToString } from "./prompt";
+import { countPromptTokens, joinPrompts, promptToString } from "./prompt";
 import type { Message, RenderedPrompt } from "./prompt";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
@@ -220,9 +220,8 @@ export function render(
     // render without priorities
     const prompt = renderRecursive(node, null);
 
-    if (prompt) {
-      // TODO: handle chat completion messages differently than strings
-      const numTokens = tokenizer.countTokens(promptToString(prompt));
+    if (prompt !== null) {
+      const numTokens = countPromptTokens(prompt, tokenizer);
       result = { prompt, numTokens };
     } else {
       result = null;
@@ -236,10 +235,8 @@ export function render(
       const candidatePriority = sortedPriorities[middle]!;
 
       const prompt = renderRecursive(node, candidatePriority);
-      // TODO: handle chat completion messages differently than strings
-      const numTokens = prompt
-        ? tokenizer.countTokens(promptToString(prompt))
-        : 0;
+      const numTokens =
+        prompt !== null ? countPromptTokens(prompt, tokenizer) : 0;
 
       if (numTokens <= tokenLimit) {
         left = middle + 1;
