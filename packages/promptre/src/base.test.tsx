@@ -113,3 +113,18 @@ test("throw on rendering prompts with different nested messages", () => {
     );
   }).toThrowError("nested message components");
 });
+
+test("falsy values are rendered properly", () => {
+  const options = {
+    tokenizer,
+    tokenLimit: Infinity,
+  };
+
+  expect(promptToString(Promptre.render(<>{null}</>, options))).toBe("");
+  expect(promptToString(Promptre.render(<>{undefined}</>, options))).toBe("");
+  expect(promptToString(Promptre.render(<>{false}</>, options))).toBe("");
+  expect(promptToString(Promptre.render(<>{NaN}</>, options))).toBe("NaN");
+  expect(promptToString(Promptre.render(<>{0}</>, options))).toBe("0");
+  expect(promptToString(Promptre.render(<>{-0}</>, options))).toBe("0");
+  expect(promptToString(Promptre.render(<>{""}</>, options))).toBe("");
+});

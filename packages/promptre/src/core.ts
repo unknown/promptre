@@ -101,7 +101,10 @@ function renderRecursive(
   priorityLimit: number | null,
 ): RenderedPrompt | null {
   if (isLiteral(node)) {
-    return node ? { type: "string", content: node.toString() } : null;
+    if (node === false || node === undefined || node === null) {
+      return null;
+    }
+    return { type: "string", content: node.toString() };
   }
 
   if (Array.isArray(node)) {
@@ -238,16 +241,16 @@ export function render(
         ? tokenizer.countTokens(promptToString(prompt))
         : 0;
 
-      if (prompt && numTokens <= tokenLimit) {
+      if (numTokens <= tokenLimit) {
         left = middle + 1;
-        result = { prompt, numTokens };
+        result = prompt !== null ? { prompt, numTokens } : null;
       } else {
         right = middle - 1;
       }
     }
   }
 
-  if (result === null || (result?.numTokens ?? 0) > tokenLimit) {
+  if (result === undefined || (result?.numTokens ?? 0) > tokenLimit) {
     throw new Error(
       `Could not render valid prompt with ${tokenLimit} token limit.`,
     );
