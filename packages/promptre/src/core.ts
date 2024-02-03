@@ -90,7 +90,7 @@ function computePriorities(
       computePriorities(node.props.children, priority, priorities);
       break;
     }
-    default: {
+    case "message": {
       computePriorities(node.props.children, parentPriority, priorities);
       break;
     }
