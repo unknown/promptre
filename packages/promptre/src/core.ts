@@ -83,12 +83,14 @@ function computePriorities(
     case "scope": {
       const priority = node.props.p ?? parentPriority + (node.props.prel ?? 0);
       // store priorities for re-use later (e.g. rendering)
-      node.props.p = priority;
+      if (node.props.p === undefined) {
+        node.props.p = priority;
+      }
       priorities.add(priority);
       computePriorities(node.props.children, priority, priorities);
       break;
     }
-    default: {
+    case "message": {
       computePriorities(node.props.children, parentPriority, priorities);
       break;
     }
@@ -108,9 +110,14 @@ function renderRecursive(
   }
 
   if (Array.isArray(node)) {
-    const results = node
-      .map((child) => renderRecursive(child, priorityLimit))
-      .filter((result): result is RenderedPrompt => result !== null);
+    const results: RenderedPrompt[] = [];
+
+    for (const child of node) {
+      const renderedChild = renderRecursive(child, priorityLimit);
+      if (renderedChild !== null) {
+        results.push(renderedChild);
+      }
+    }
 
     return results.length > 0 ? joinPrompts(results) : null;
   }

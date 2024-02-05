@@ -37,11 +37,7 @@ export function joinPrompts(prompts: RenderedPrompt[]): RenderedPrompt {
   }
 
   for (let i = 1; i < prompts.length; ++i) {
-    const currPrompt = prompts[i];
-
-    if (currPrompt === undefined) {
-      continue;
-    }
+    const currPrompt = prompts[i]!;
 
     if (result.type === "string" && currPrompt.type === "string") {
       result.content += promptToString(currPrompt);
