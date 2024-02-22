@@ -98,6 +98,22 @@ test("prompts with message tags render to message prompts", () => {
   });
 });
 
+test("throw on rendering prompts with same nested messages", () => {
+  expect(() => {
+    Promptre.render(
+      <Promptre.AssistantMessage>
+        <Promptre.AssistantMessage>
+          <ScopeTest />
+        </Promptre.AssistantMessage>
+      </Promptre.AssistantMessage>,
+      {
+        tokenizer,
+        tokenLimit: Infinity,
+      },
+    );
+  }).toThrowError("message element as a child");
+});
+
 test("throw on rendering prompts with different nested messages", () => {
   expect(() => {
     Promptre.render(
@@ -111,7 +127,7 @@ test("throw on rendering prompts with different nested messages", () => {
         tokenLimit: Infinity,
       },
     );
-  }).toThrowError("nested message components");
+  }).toThrowError("message element as a child");
 });
 
 test("falsy values are rendered properly", () => {

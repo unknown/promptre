@@ -3,7 +3,7 @@ import { Tokenizer } from "@promptre/tokenizer";
 import { isLiteral } from "./node";
 import type { FunctionComponent, PromptElement, PromptNode } from "./node";
 import { countPromptTokens, joinPrompts, promptToString } from "./prompt";
-import type { Message, RenderedPrompt } from "./prompt";
+import type { RenderedPrompt } from "./prompt";
 
 type IntrinsicElement = keyof JSX.IntrinsicElements;
 type IntrinsicElementProps<T extends IntrinsicElement> =
@@ -150,32 +150,30 @@ function renderRecursive(
         priorityLimit,
       );
 
-      let messages: Message[] = [];
-      switch (childrenPrompt?.type) {
-        case "string": {
-          messages = [
-            { role: node.props.role, content: promptToString(childrenPrompt) },
-          ];
-          break;
-        }
-        case "message": {
-          for (const message of childrenPrompt.messages) {
-            if (message.role !== node.props.role) {
-              throw new Error(
-                "Error rendering: nested message components cannot have differing message roles",
-              );
-            }
-
-            messages.push(message);
-          }
-          break;
-        }
+      if (childrenPrompt === null) {
+        throw new Error(
+          "Error rendering: message elements must have some renderable child",
+        );
       }
 
-      return {
-        messages,
-        type: "message",
-      };
+      switch (childrenPrompt.type) {
+        case "string": {
+          return {
+            type: "message",
+            messages: [
+              {
+                role: node.props.role,
+                content: promptToString(childrenPrompt),
+              },
+            ],
+          };
+        }
+        case "message": {
+          throw new Error(
+            "Error rendering: message elements cannot have a message element as a child",
+          );
+        }
+      }
     }
   }
 }
