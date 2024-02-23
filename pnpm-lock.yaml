@@ -23,6 +23,9 @@ importers:
 
   examples/api:
     dependencies:
+      '@fastify/url-data':
+        specifier: ^5.4.0
+        version: 5.4.0
       fastify:
         specifier: ^4.26.0
         version: 4.26.0
@@ -526,6 +529,13 @@ packages:
     resolution: {integrity: sha512-aZAXGYo6m22Fk1zZzEUKBvut/CIIQe/BapEORnxiD5Qr0kPHqqI69NtEMCme74h+at72sPhbkb4ZrLd1W3KRLA==}
     dependencies:
       fast-json-stringify: 5.11.1
+    dev: false
+
+  /@fastify/url-data@5.4.0:
+    resolution: {integrity: sha512-Ht8lAZnIGsBKdFu6yYwN98OH89fFziCMeCq3yyZbIUKl+lbK5njhmPrcxAwfwLW1QoVk6OO0BkUPu1E/3Js94A==}
+    dependencies:
+      fast-uri: 2.3.0
+      fastify-plugin: 4.5.1
     dev: false
 
   /@ianvs/prettier-plugin-sort-imports@4.1.1(prettier@3.2.4):
@@ -1541,6 +1551,10 @@ packages:
 
   /fast-uri@2.3.0:
     resolution: {integrity: sha512-eel5UKGn369gGEWOqBShmFJWfq/xSJvsgDzgLYC845GneayWvXBf0lJCBn5qTABfewy1ZDPoaR5OZCP+kssfuw==}
+    dev: false
+
+  /fastify-plugin@4.5.1:
+    resolution: {integrity: sha512-stRHYGeuqpEZTL1Ef0Ovr2ltazUT9g844X5z/zEBFLG8RYlpDiOCIG+ATvYEp+/zmc7sN29mcIMp8gvYplYPIQ==}
     dev: false
 
   /fastify@4.26.0:

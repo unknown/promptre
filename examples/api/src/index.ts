@@ -1,40 +1,56 @@
 import * as Promptre from "promptre";
-import OpenAI from "openai";
+import urlData from "@fastify/url-data";
 import Fastify from "fastify";
-import * as Story from "./prompts/story";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import OpenAI from "openai";
 
-const fastify = Fastify({ logger: true });
 const openai = new OpenAI();
 
 const model = "gpt-3.5-turbo";
 const tokenizer = new Promptre.Tokenizer(model);
 
-fastify.get<{ Querystring: { protagonist: string; stream?: boolean } }>(
-  "/story",
+const fastify = Fastify({ logger: true });
+fastify.register(urlData);
+
+fastify.get<{ Querystring: { stream?: boolean } }>(
+  "/*",
   {
     schema: {
       querystring: {
         type: "object",
-        properties: {
-          protagonist: { type: "string" },
-          stream: { type: "boolean" },
-        },
-        required: ["protagonist"],
+        properties: { stream: { type: "boolean" } },
       },
     },
   },
   async function handler(request, reply) {
-    const { protagonist, stream } = request.query;
+    const path = request.urlData().path;
 
-    const prompt = Promptre.render(Story.default({ protagonist }), {
-      tokenizer,
-    });
+    if (!path) {
+      reply.status(500).send("Failed to get prompt from query");
+      return;
+    }
 
-    const messages =
+    executeRoute(`./${path}`, request, reply);
+
+    return reply;
+  },
+);
+
+async function executeRoute(
+  importURL: string,
+  request: FastifyRequest<{ Querystring: { stream?: boolean } }>,
+  reply: FastifyReply,
+) {
+  try {
+    const module = await import(importURL);
+    const { stream, ...props } = request.query;
+    const prompt = Promptre.render(module.default(props), { tokenizer });
+
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
       prompt.type === "string"
         ? [
             {
-              role: "system" as const,
+              role: "system",
               content: prompt.content,
             },
           ]
@@ -57,12 +73,13 @@ fastify.get<{ Querystring: { protagonist: string; stream?: boolean } }>(
           continue;
         }
 
-        const transformed = await Story.onStream(content);
+        const transformed =
+          "onStream" in module ? await module.onStream(content) : null;
 
-        reply.raw.write(transformed);
+        reply.raw.write(transformed ?? content);
       }
 
-      return reply.raw.end();
+      reply.raw.end();
     } else {
       const chat = await openai.chat.completions.create({
         model,
@@ -73,15 +90,20 @@ fastify.get<{ Querystring: { protagonist: string; stream?: boolean } }>(
       const content = chat.choices[0]?.message?.content;
 
       if (content === undefined || content === null) {
-        return reply.status(500).send("Completion is invalid");
+        reply.status(500).send("Completion is invalid");
+        return;
       }
 
-      const transformed = await Story.onOutput(content);
+      const transformed =
+        "onOutput" in module ? await module.onOutput(content) : null;
 
-      return reply.send(transformed);
+      reply.send(transformed ?? content);
     }
-  },
-);
+  } catch (err) {
+    console.error(err);
+    reply.status(404).send("Prompt not found");
+  }
+}
 
 async function main() {
   try {
