@@ -15,13 +15,13 @@ export * from "./components/user-message";
 
 export * from "@promptre/tokenizer";
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      scope: ScopeProps;
-      message: MessageProps;
-    }
-    type Element = PromptElement;
-    type ElementType = keyof IntrinsicElements | ((props: any) => PromptNode);
+export namespace JSX {
+  export interface IntrinsicElements {
+    scope: ScopeProps;
+    message: MessageProps;
   }
+  export type Element = PromptElement;
+  export type ElementType =
+    | keyof IntrinsicElements
+    | ((props: any) => PromptNode);
 }
